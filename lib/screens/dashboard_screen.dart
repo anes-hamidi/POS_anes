@@ -1,20 +1,19 @@
 import 'dart:async';
-import 'dart:io';
-import 'dart:math';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
-import 'package:myapp/data/database.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+import 'package:myapp/l10n/app_localizations.dart';
+import 'package:myapp/providers/themeProvider.dart';
+import 'package:myapp/screens/payment_screen.dart';
+import 'package:myapp/screens/settings.dart';
 import 'package:provider/provider.dart';
-import '../main.dart';
 import './pos_screen.dart';
 import './product_screen.dart';
 import './customer_screen.dart';
 import './invoice_history_screen.dart';
 import '../widgets/common/themed_scaffold.dart';
-import '../widgets/common/animated_grid_item.dart';
 import '../widgets/dashboard/dashboard_item.dart';
+
+ import 'package:myapp/data/database.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -37,13 +36,6 @@ class _DashboardScreenState extends State<DashboardScreen>
   int _totalCustomers = 0;
   int _todaySales = 0;
 
-  final List<Map<String, dynamic>> _dashboardItems = [
-    {'icon': Icons.point_of_sale, 'label': 'POS', 'screen': const POSScreen()},
-    {'icon': Icons.inventory_2, 'label': 'Products', 'screen': const ProductScreen()},
-    {'icon': Icons.people, 'label': 'Customers', 'screen': const CustomerScreen()},
-    {'icon': Icons.receipt_long, 'label': 'Invoice', 'screen': const InvoiceHistoryScreen()},
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -54,20 +46,11 @@ class _DashboardScreenState extends State<DashboardScreen>
       duration: const Duration(milliseconds: 1000),
     );
 
-    _animations = List.generate(
-      _dashboardItems.length,
-      (index) => Tween<double>(begin: 0.8, end: 1.0).animate(
-        CurvedAnimation(
-          parent: _animationController,
-          curve: Interval(index * 0.1, 1.0, curve: Curves.easeOutBack),
-        ),
-      ),
-    );
-
-    _animationController.forward();
-
     _updateDateTime();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _updateDateTime());
+    _timer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _updateDateTime(),
+    );
 
     _loadDashboardData();
   }
@@ -88,10 +71,19 @@ class _DashboardScreenState extends State<DashboardScreen>
       final customerCount = await _db.customers.select().get();
       final today = DateTime.now();
 
-      final invoiceCount = await (_db.select(_db.sales)
-            ..where((tbl) => tbl.saleDate.isBiggerOrEqualValue(DateTime(today.year, today.month, today.day)))
-            ..where((tbl) => tbl.saleDate.isSmallerThanValue(DateTime(today.year, today.month, today.day + 1))))
-          .get();
+      final invoiceCount =
+          await (_db.select(_db.sales)
+                ..where(
+                  (tbl) => tbl.saleDate.isBiggerOrEqualValue(
+                    DateTime(today.year, today.month, today.day),
+                  ),
+                )
+                ..where(
+                  (tbl) => tbl.saleDate.isSmallerThanValue(
+                    DateTime(today.year, today.month, today.day + 1),
+                  ),
+                ))
+              .get();
 
       setState(() {
         _totalProducts = productCount.length;
@@ -102,62 +94,6 @@ class _DashboardScreenState extends State<DashboardScreen>
       debugPrint("Error loading dashboard data: $e\n$stack");
     }
   }
-Future<void> _handleBackup() async {
-  try {
-    final dir = await getApplicationDocumentsDirectory();
-    final backupPath = p.join(dir.path, 'backup_${DateTime.now().millisecondsSinceEpoch}.sqlite');
-
-    await _db.backupDatabase(backupPath);
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Backup created at $backupPath")),
-    );
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Backup failed: $e")),
-    );
-  }
-}
-
-Future<void> _handleRestore() async {
-  try {
-    // TODO: let user pick file with file_picker or use last backup automatically
-    final dir = await getApplicationDocumentsDirectory();
-    final latestBackup = Directory(dir.path)
-        .listSync()
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.sqlite'))
-        .toList()
-      ..sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
-
-    if (latestBackup.isEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("No backup found")),
-      );
-      return;
-    }
-
-    final backupFile = latestBackup.first;
-    final dbFile = File(p.join(dir.path, 'db.sqlite'));
-
-    await backupFile.copy(dbFile.path);
-    await _db.close(); // Close old connection
-    _db = AppDatabase(); // Reopen with fresh DB
-
-    await _loadDashboardData();
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Database restored successfully")),
-    );
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Restore failed: $e")),
-    );
-  }
-}
 
   @override
   void dispose() {
@@ -169,19 +105,65 @@ Future<void> _handleRestore() async {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final t = AppLocalizations.of(context)!;
+
+    final List<Map<String, dynamic>> dashboardItems = [
+      {
+        'icon': Icons.point_of_sale,
+        'label': t.pos,
+        'screen': const POSScreen(),
+      },
+      {
+        'icon': Icons.inventory_2,
+        'label': t.products,
+        'screen': const ProductScreen(),
+      },
+      {
+        'icon': Icons.people,
+        'label': t.customers,
+        'screen': const CustomerScreen(),
+      },
+      {
+        'icon': Icons.receipt_long,
+        'label': t.invoice,
+        'screen': const InvoiceHistoryScreen(),
+      },
+      {
+        'icon': Icons.settings,
+        'label': t.settings,
+        'screen': const SettingsScreen(),
+      },
+      {
+        'icon': Icons.payment,
+        'label': t.payments,
+        'screen': const PaymentsScreen(),
+      }
+    ];
+
+    _animations = List.generate(
+      dashboardItems.length,
+      (index) => Tween<double>(begin: 0.8, end: 1.0).animate(
+        CurvedAnimation(
+          parent: _animationController,
+          curve: Interval(index * 0.1, 1.0, curve: Curves.easeOutBack),
+        ),
+      ),
+    );
+    _animationController.forward();
 
     return ThemedScaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: Text(t.dashboardTitle),
         actions: [
           IconButton(
-            icon: Icon(themeProvider.themeMode == ThemeMode.dark
-                ? Icons.light_mode
-                : Icons.dark_mode),
+            icon: Icon(
+              themeProvider.themeMode == ThemeMode.dark
+                  ? Icons.light_mode
+                  : Icons.dark_mode,
+            ),
             onPressed: () => themeProvider.toggleTheme(),
-            tooltip: 'Toggle Theme',
+            tooltip: t.toggleTheme,
           ),
-    
         ],
       ),
       body: RefreshIndicator(
@@ -212,7 +194,8 @@ Future<void> _handleRestore() async {
                       child: Text(
                         _currentTime,
                         key: ValueKey(_currentTime),
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
                               fontWeight: FontWeight.w600,
                               color: Theme.of(context).colorScheme.secondary,
                             ),
@@ -227,13 +210,26 @@ Future<void> _handleRestore() async {
               Row(
                 children: [
                   _buildSummaryCard(
-                      "Products", _totalProducts.toString(), Icons.inventory, Colors.blue),
+                    t.products,
+                    _totalProducts.toString(),
+                    Icons.inventory,
+                    Colors.blue,
+                  ),
                   const SizedBox(width: 10),
                   _buildSummaryCard(
-                      "Customers", _totalCustomers.toString(), Icons.people, Colors.green),
+                    t.customers,
+                    _totalCustomers.toString(),
+                    Icons.people,
+                    Colors.green,
+                  ),
                   const SizedBox(width: 10),
                   _buildSummaryCard(
-                      "Sales", _todaySales.toString(), Icons.point_of_sale, Colors.purple),
+                    t.sales,
+                    _todaySales.toString(),
+                    Icons.point_of_sale,
+                    Colors.purple,
+                  ),
+
                 ],
               ),
 
@@ -249,12 +245,14 @@ Future<void> _handleRestore() async {
                   mainAxisSpacing: 20,
                   childAspectRatio: 1,
                 ),
-                itemCount: _dashboardItems.length,
+                itemCount: dashboardItems.length,
                 itemBuilder: (context, index) {
                   return ScaleTransition(
                     scale: _animations[index],
                     child: Material(
-                      color: Theme.of(context).colorScheme.surfaceVariant,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
                       elevation: 4,
                       borderRadius: BorderRadius.circular(16),
                       child: InkWell(
@@ -262,20 +260,22 @@ Future<void> _handleRestore() async {
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (context) => _dashboardItems[index]['screen'],
+                              builder: (context) =>
+                                  dashboardItems[index]['screen'],
                             ),
                           );
                         },
                         child: DashboardItem(
-                          icon: _dashboardItems[index]['icon'],
-                          label: _dashboardItems[index]['label'], 
+                          icon: dashboardItems[index]['icon'],
+                          label: dashboardItems[index]['label'],
                           onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (context) => _dashboardItems[index]['screen'],
+                                builder: (context) =>
+                                    dashboardItems[index]['screen'],
                               ),
                             );
-                            },
+                          },
                         ),
                       ),
                     ),
@@ -289,7 +289,12 @@ Future<void> _handleRestore() async {
     );
   }
 
-  Widget _buildSummaryCard(String title, String value, IconData icon, Color color) {
+  Widget _buildSummaryCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Expanded(
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

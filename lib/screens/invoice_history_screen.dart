@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/screens/invoice_detaile_scree.dart';
 import 'package:provider/provider.dart';
+
 import '../data/database.dart';
 import '../services/printer_service.dart';
 
@@ -20,14 +22,61 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
   Widget build(BuildContext context) {
     final db = context.read<AppDatabase>();
     final printerService = context.read<PrinterService>();
+    final loc = AppLocalizations.of(context)!; // ✅ shorthand for translations
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Invoice History"),
+        title: FutureBuilder<List<SaleWithItemsAndCustomer>>(
+          future: db.getAllSalesWithDetails(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Text("(…)");
+            }
+
+            final sales = snapshot.data ?? [];
+
+            // ✅ Filter by selected date
+            final filteredByDate = sales.where((sale) {
+              final saleDate = DateTime(
+                sale.sale.saleDate.year,
+                sale.sale.saleDate.month,
+                sale.sale.saleDate.day,
+              );
+              final selected = DateTime(
+                selectedDate.year,
+                selectedDate.month,
+                selectedDate.day,
+              );
+              return saleDate == selected;
+            }).toList();
+
+            // ✅ Filter by search query
+            final filteredSales = filteredByDate.where((sale) {
+              final query = searchQuery.toLowerCase();
+              return sale.sale.id.toLowerCase().contains(query) ||
+                  (sale.customer?.name.toLowerCase().contains(query) ?? false);
+            }).toList();
+
+            // ✅ Calculate total amount
+            final totalAmount = filteredSales.fold<double>(
+              0.0,
+              (sum, s) => sum + s.sale.totalAmount,
+            );
+
+            return Text(
+              "${loc.totalItems}: ${totalAmount.toStringAsFixed(2)} ${loc.currencySymbol}",
+              style: const TextStyle(
+                fontSize: 18,
+                color: Colors.blueAccent,
+                fontWeight: FontWeight.bold,
+              ),
+            );
+          },
+        ),
       ),
       body: Column(
         children: [
-          _buildSearchAndFilterBar(),
+          _buildSearchAndFilterBar(loc),
           Expanded(
             child: FutureBuilder<List<SaleWithItemsAndCustomer>>(
               future: db.getAllSalesWithDetails(),
@@ -36,7 +85,9 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  return Center(child: Text("Error: ${snapshot.error}"));
+                  return Center(
+                    child: Text("${loc.errorLoadingProducts}: ${snapshot.error}"),
+                  );
                 }
 
                 final sales = snapshot.data ?? [];
@@ -64,7 +115,9 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                 }).toList();
 
                 if (filteredSales.isEmpty) {
-                  return const Center(child: Text("No invoices found for selected filters."));
+                  return Center(
+                    child: Text(loc.noProductsFound), // ✅ localized
+                  );
                 }
 
                 return ListView.separated(
@@ -75,22 +128,22 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                     final sale = saleDetails.sale;
 
                     return ListTile(
-                      title: Text("Invoice #${sale.id.substring(0, 8)}"),
+                      title: Text("${loc.invoiceDetails} #${sale.id.substring(0, 8)}"),
                       subtitle: Text(
-                        "Date: ${DateFormat.yMMMd().add_Hm().format(sale.saleDate)}\n"
-                        "Total: ${sale.totalAmount.toStringAsFixed(2)} DA",
+                        "${loc.businessInformation}: ${DateFormat.yMMMd().add_Hm().format(sale.saleDate)}\n"
+                        "${loc.totalItems}: ${sale.totalAmount.toStringAsFixed(2)} ${loc.currencySymbol}",
                       ),
                       isThreeLine: true,
                       trailing: IconButton(
                         icon: const Icon(Icons.print, color: Colors.blue),
-                        tooltip: 'Print Invoice',
+                        tooltip: loc.printer, // ✅ "Print Invoice"
                         onPressed: () async {
                           try {
-                            await printerService.printInvoice(saleDetails,context);
+                            await printerService.printInvoice(saleDetails, context);
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Invoice sent to printer."),
+                                SnackBar(
+                                  content: Text(loc.printerSettings),
                                   backgroundColor: Colors.green,
                                 ),
                               );
@@ -99,7 +152,7 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text("Error printing invoice: $e"),
+                                  content: Text("${loc.errorLoadingProducts}: $e"),
                                   backgroundColor: Colors.red,
                                 ),
                               );
@@ -111,7 +164,8 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => InvoiceDetailScreen(saleDetails: saleDetails),
+                            builder: (_) =>
+                                InvoiceDetailScreen(saleDetails: saleDetails),
                           ),
                         );
                       },
@@ -126,17 +180,17 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
     );
   }
 
-  Widget _buildSearchAndFilterBar() {
+  Widget _buildSearchAndFilterBar(AppLocalizations loc) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Row(
         children: [
           Expanded(
             child: TextField(
-              decoration: const InputDecoration(
-                hintText: 'Search by invoice ID or customer',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                hintText: loc.searchByNameCategoryOrSku, // ✅ localized hint
+                prefixIcon: const Icon(Icons.search),
+                border: const OutlineInputBorder(),
                 isDense: true,
               ),
               onChanged: (value) {
@@ -147,7 +201,7 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
           const SizedBox(width: 8),
           IconButton(
             icon: const Icon(Icons.calendar_today),
-            tooltip: 'Filter by date',
+            tooltip: loc.chooseAction, // ✅ "Filter by date"
             onPressed: () async {
               final pickedDate = await showDatePicker(
                 context: context,

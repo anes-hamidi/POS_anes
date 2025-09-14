@@ -1,3 +1,5 @@
+import 'package:drift/drift.dart' hide Column;
+import 'package:myapp/l10n/app_localizations.dart';
 // product_list.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -19,77 +21,86 @@ class ProductList extends StatelessWidget {
     final NumberFormat currencyFormat =
         NumberFormat.currency(locale: 'en_AR', symbol: 'DA ');
     final colorScheme = Theme.of(context).colorScheme;
+Future<void> showQuantityDialog(Product product) async {
+  final TextEditingController controller = TextEditingController();
+  int baseQty = product.quantity;
+  int addQty = 0;
 
-    Future<void> _showQuantityDialog(Product product) async {
-      int tempQty = product.quantity;
-
-      await showDialog(
-        context: context,
-        builder: (ctx) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Text('Adjust Quantity - ${product.name}'),
-            content: StatefulBuilder(
-              builder: (context, setState) {
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
+  await showDialog(
+    context: context,
+    builder: (ctx) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          AppLocalizations.of(context)!.adjustQuantity(product.name),
+        ),
+        content: StatefulBuilder(
+          builder: (context, setState) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
                   children: [
-                    Text('Current Qty: $tempQty',
-                        style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 12),
-                    Slider(
-                      value: tempQty.toDouble(),
-                      min: 0,
-                      max: 500000, // You can make this dynamic based on stock limits
-                      divisions: 500000,
-                      label: tempQty.toString(),
-                      onChanged: (value) {
-                        setState(() => tempQty = value.round());
-                      },
-                    ),
-                    TextField(
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Set Exact Quantity',
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (val) {
-                        final parsed = int.tryParse(val);
-                        if (parsed != null && parsed >= 0) {
-                          setState(() => tempQty = parsed);
-                        }
-                      },
+                    Text(
+                      '$baseQty --> : ${baseQty + addQty}',
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ],
-                );
-              },
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  await db.update(db.products).replace(
-                    product.copyWith(quantity: tempQty),
-                  );
-                  Navigator.pop(ctx);
-                },
-                icon: const Icon(Icons.save),
-                label: const Text('Save'),
-              ),
-            ],
-          );
-        },
+                ),
+                const SizedBox(height: 12),
+
+                TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.setExactQuantity,
+                    border: const OutlineInputBorder(),
+                  ),
+                  onChanged: (val) {
+                    final parsed = int.tryParse(val) ?? 0;
+                    setState(() => addQty = parsed);
+                  },
+                ),
+
+               
+              ],
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              final newQty = baseQty + addQty;
+              await db.update(db.products).replace(
+                product.copyWith(quantity: newQty),
+              );
+              Navigator.pop(ctx);
+            },
+            icon: const Icon(Icons.save),
+            label: Text(AppLocalizations.of(context)!.save),
+          ),
+        ],
       );
-    }
+    },
+  );
+}
 
     return ListView.builder(
       itemCount: products.length,
       itemBuilder: (ctx, i) {
         final product = products[i];
+
         return Card(
+          color: product.quantity < 2
+              ? colorScheme.errorContainer
+              : colorScheme.surface,
+
+
+              
           elevation: 2,
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -99,48 +110,79 @@ class ProductList extends StatelessWidget {
               radius: 26,
               backgroundImage: product.imageUrl != null
                   ? FileImage(File(product.imageUrl!))
-                  : null,
-              child: product.imageUrl == null
-                  ? const Icon(Icons.inventory_2_outlined)
-                  : null,
-            ),
-            title: Text(product.name,
-                style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text(
-              '${currencyFormat.format(product.price)} • Qty: ${product.quantity}',
-              style: TextStyle(color: colorScheme.onSurfaceVariant),
-            ),
-            onTap: () => _showQuantityDialog(product), // 👈 Tap opens quantity dialog
-            trailing: PopupMenuButton<String>(
-              onSelected: (value) async {
-                if (value == 'edit') {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => AddEditProductScreen(product: product),
-                    ),
-                  );
-                } else if (value == 'delete') {
-                  final confirmed =
-                      await confirmationDialogService.showConfirmationDialog(
-                    context,
-                    title: 'Delete Product',
-                    content: 'Are you sure you want to delete ${product.name}?',
-                  );
-                  if (confirmed == true) {
-                    await db.delete(db.products).delete(product);
-                  }
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                PopupMenuItem(
-                  value: 'delete',
-                  child: Text('Delete', style: TextStyle(color: colorScheme.error)),
-                ),
-              ],
+        : null,
+    child: product.imageUrl == null
+        ? const Icon(Icons.inventory_2_outlined)
+        : null,
+  ),
+  title: Text(
+    product.name,
+    style: const TextStyle(fontWeight: FontWeight.bold),
+  ),
+  subtitle: Text(
+    '${AppLocalizations.of(context)!.category}: ${product.category}\n'
+    '${AppLocalizations.of(context)!.price}: ${currencyFormat.format(product.price)}\n'
+    '${AppLocalizations.of(context)!.quantity}: ${product.quantity}',
+    style: TextStyle(color: colorScheme.onSurfaceVariant),
+  ),
+  onTap: () => showQuantityDialog(product),
+
+  // ✅ Trailing section with warning + popup menu
+  trailing: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (product.quantity < 5) ...[
+        const Icon(Icons.flag, color: Colors.red),
+        const SizedBox(width: 8),
+      ],
+      PopupMenuButton<String>(
+        onSelected: (value) async {
+          if (value == AppLocalizations.of(context)!.edit) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => AddEditProductScreen(product: product),
+              ),
+            );
+          } else if (value == AppLocalizations.of(context)!.delete) {
+  final confirmed = await confirmationDialogService.showConfirmationDialog(
+    context,
+    title: AppLocalizations.of(context)!.deleteProduct,
+    content: AppLocalizations.of(context)!
+        .areYouSureDeleteProduct(product.name),
+  );
+if (confirmed == true) {
+  // First remove child rows
+  await (db.delete(db.saleItems)
+        ..where((s) => s.productId.equals(product.id)))
+      .go();
+
+  // Now delete the product
+  await (db.delete(db.products)
+        ..where((p) => p.id.equals(product.id)))
+      .go();
+}
+
+
+}
+        },  
+        itemBuilder: (context) => [
+          PopupMenuItem(
+            value: AppLocalizations.of(context)!.edit,
+            child: Text(AppLocalizations.of(context)!.edit),
+          ),
+          PopupMenuItem(
+            value: AppLocalizations.of(context)!.delete,
+            child: Text(
+              AppLocalizations.of(context)!.delete,
+              style: TextStyle(color: colorScheme.error),
             ),
           ),
-        );
+        ],
+      ),
+    ],
+  ),
+)
+ );
       },
     );
   }

@@ -1,22 +1,19 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:myapp/providers/settingProvider.dart';
+import 'package:myapp/screens/add_edit_product_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import '../../data/database.dart';
 import '../../providers/cart_provider.dart';
-
-
+import '../../l10n/app_localizations.dart';
 
 class ProductGrid extends StatelessWidget {
   final List<Product> products;
   final Map<String, num>? rankingScores; // 🆕 optional ranking map
 
-  const ProductGrid({
-    super.key,
-    required this.products,
-    this.rankingScores,
-});
+  const ProductGrid({super.key, required this.products, this.rankingScores});
 
   @override
   Widget build(BuildContext context) {
@@ -53,10 +50,10 @@ class ProductGrid extends StatelessWidget {
       itemCount: products.length,
       itemBuilder: (ctx, i) {
         final product = products[i];
-final rankingScore = rankingScores?[product.id];
-final rankIndex = rankingScores != null
-    ? rankingScores!.keys.toList().indexOf(product.id) + 1
-    : null;
+        final rankingScore = rankingScores?[product.id];
+        final rankIndex = rankingScores != null
+            ? rankingScores!.keys.toList().indexOf(product.id) + 1
+            : null;
         // ✅ Use Selector per item — rebuild only this tile when qty changes
         return Selector<CartProvider, int>(
           selector: (_, cart) {
@@ -72,10 +69,66 @@ final rankIndex = rankingScores != null
             );
 
             return GestureDetector(
-              onTap: () =>
-                  context.read<CartProvider>().addToCart(product.id),
+              onLongPress: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => AddEditProductScreen(product: product),
+                  ),
+                );
+              },
+          onTap: () async {
+  final allowSaleWithoutStock =
+      context.read<SettingsProvider>().allowSaleWithoutStock;
+
+  if (product.quantity <= 0 && !allowSaleWithoutStock) {
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(AppLocalizations.of(context)!.outOfStock),
+          content: Text(
+            AppLocalizations.of(context)!.productOutOfStock(product.name),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx, 'adjust');
+              },
+              child: Text(AppLocalizations.of(context)!.adjustQuantity(product.name)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx, 'proceed');
+              },
+              child:
+                  Text(AppLocalizations.of(context)!.proceedWithoutStock),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == 'adjust') {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => AddEditProductScreen(product: product),
+        ),
+      );
+    } else if (result == 'proceed') {
+      context.read<CartProvider>().addToCart(product.id);
+    }
+  } else {
+    // Normal flow (either stock > 0 OR setting allows sale without stock)
+    context.read<CartProvider>().addToCart(product.id);
+  }
+},
+
+
               child: KeyedSubtree(
-                key: ValueKey('${product.id}-qty-$qty'),
+                key: ValueKey('${product.id}-${AppLocalizations.of(context)!.quantity}-$qty'),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeOut,
@@ -107,48 +160,53 @@ final rankIndex = rankingScores != null
                   clipBehavior: Clip.antiAlias,
                   child: Stack(
                     children: [
-                      if (rankIndex != null)
-  Positioned(
-    top: 6,
-    left: 6,
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: rankIndex == 1
-            ? Colors.amber[700]
-            : rankIndex <= 3
-                ? Colors.orange[600]
-                : Colors.blueGrey.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          )
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.star,
-            size: 14,
-            color: Colors.white,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            'Top $rankIndex',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    ),
-  ),
+                      if (rankIndex != null && rankIndex <= 10)
+                        Positioned(
+                          top: 6,
+                          left: 6,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: rankIndex <= 5
+                                  ? Colors.amber[700] // 🥇 Gold for Top 5
+                                  : Colors.grey[400], // 🥈 Silver for 6–10
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.3),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  rankIndex <= 5
+                                      ? Icons.arrow_upward
+                                      : Icons.arrow_downward,
+                                  size: 14,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(width: 4),
+                                if (rankIndex <= 10) ...[
+                                  Text(
+                                    '${AppLocalizations.of(context)!.topProduct} $rankIndex',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                               ],
+                              ],
+                            ),
+                          ),
+                        ),
 
                       // --- Product Image with Shimmer Effect ---
                       _ProductImageWithShimmer(
@@ -165,11 +223,11 @@ final rankIndex = rankingScores != null
                           transitionBuilder: (child, anim) {
                             final scaleAnim =
                                 Tween<double>(begin: 0.5, end: 1.0).animate(
-                              CurvedAnimation(
-                                parent: anim,
-                                curve: Curves.elasticOut,
-                              ),
-                            );
+                                  CurvedAnimation(
+                                    parent: anim,
+                                    curve: Curves.elasticOut,
+                                  ),
+                                );
                             return ScaleTransition(
                               scale: scaleAnim,
                               child: FadeTransition(
@@ -182,15 +240,17 @@ final rankIndex = rankingScores != null
                               ? QuantityBadge(
                                   quantity: qty,
                                   onQuantityChanged: (newQty) {
-                                    context
-                                        .read<CartProvider>()
-                                        .updateQuantity(product.id, newQty);
+                                    context.read<CartProvider>().updateQuantity(
+                                      product.id,
+                                      newQty,
+                                    );
                                   },
                                 )
                               : const SizedBox.shrink(),
                         ),
                       ),
 
+                      // --- Gradient + Name + Price + Qty ---
                       // --- Gradient + Name + Price + Qty ---
                       Positioned(
                         bottom: 0,
@@ -213,6 +273,44 @@ final rankIndex = rankingScores != null
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              if (rankingScore != null && rankIndex != null)
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: rankIndex <= 5
+                                            ? Colors.amber[700] // gold
+                                            : rankIndex <= 10
+                                            ?  Colors.green[600]// silver
+                                            :Colors.grey[500] , // green
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        '⭐',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      AppLocalizations.of(context)!.topProduct(rankIndex),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
                               Text(
                                 product.name,
                                 style: TextStyle(
@@ -236,6 +334,7 @@ final rankIndex = rankingScores != null
                                 initialStock: product.quantity,
                               ),
                               const SizedBox(height: 8),
+
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
@@ -255,6 +354,8 @@ final rankIndex = rankingScores != null
                                       ],
                                     ),
                                   ),
+
+                                  // ⭐ Ranking score shown if available
                                 ],
                               ),
                             ],
@@ -325,14 +426,16 @@ class __ProductImageWithShimmerState extends State<_ProductImageWithShimmer>
                           return _ShimmerPlaceholder(animation: _controller);
                         } else if (!_imageLoaded) {
                           WidgetsBinding.instance.addPostFrameCallback((_) {
-                            setState(() {
-                              _imageLoaded = true;
-                            });
+                            if (mounted) {
+                              setState(() {
+                                _imageLoaded = true;
+                              });
+                            }
                           });
                         }
                         return AnimatedOpacity(
                           opacity: _imageLoaded ? 1.0 : 0.0,
-                          duration: Duration(milliseconds: 500),
+                          duration: const Duration(milliseconds: 500),
                           curve: Curves.easeInOut,
                           child: child,
                         );
@@ -393,12 +496,11 @@ class _StockIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLowStock =
-        availableStock <= initialStock * 0.2 && availableStock > 0;
+    final isLowStock = availableStock <= 2;
 
     return TweenAnimationBuilder<int>(
       key: ValueKey('stock-$availableStock'),
-      tween: IntTween(begin: initialStock, end: availableStock),
+      tween: IntTween(begin: availableStock, end: availableStock),
       duration: const Duration(milliseconds: 800),
       curve: Curves.easeOut,
       builder: (context, value, child) {
@@ -407,28 +509,28 @@ class _StockIndicator extends StatelessWidget {
             Icon(
               Icons.inventory,
               size: 14,
-              color: isLowStock ? Colors.orange : Colors.white70,
+              color: isLowStock ? const Color.fromARGB(255, 255, 0, 0) : Colors.white70,
             ),
             SizedBox(width: 4),
             AnimatedDefaultTextStyle(
-              duration: Duration(milliseconds: 300),
+              duration: Duration(milliseconds: 200),
               style: TextStyle(
-                color: isLowStock ? Colors.orange : Colors.white70,
+                color: isLowStock ?  const Color.fromARGB(255, 255, 0, 0) : Colors.white70,
                 fontSize: 12,
                 fontWeight: isLowStock ? FontWeight.bold : FontWeight.normal,
               ),
-              child: Text('Stock: $value'),
+              child: Text(AppLocalizations.of(context)!.stock(value)),
             ),
             if (isLowStock)
               Padding(
                 padding: const EdgeInsets.only(left: 4),
                 child: AnimatedScale(
                   scale: 1.0,
-                  duration: Duration(milliseconds: 1000),
+                  duration: Duration(milliseconds: 400),
                   child: Icon(
                     Icons.warning_amber_rounded,
                     size: 12,
-                    color: Colors.orange,
+                    color: const Color.fromARGB(255, 255, 0, 0),
                   ),
                 ),
               ),
@@ -447,8 +549,8 @@ class QuantityBadge extends StatefulWidget {
   const QuantityBadge({
     required this.quantity,
     required this.onQuantityChanged,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   State<QuantityBadge> createState() => _QuantityBadgeState();
@@ -478,11 +580,9 @@ class _QuantityBadgeState extends State<QuantityBadge> {
     widget.onQuantityChanged(newQty);
     setState(() => _isEditing = false);
   }
-  
 
   @override
   Widget build(BuildContext context) {
-
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 400),
       transitionBuilder: (child, animation) {
@@ -494,7 +594,7 @@ class _QuantityBadgeState extends State<QuantityBadge> {
       },
       child: widget.quantity > 0
           ? GestureDetector(
-              key: ValueKey('qty-${widget.quantity}-${_isEditing}'),
+              key: ValueKey('qty-${widget.quantity}-$_isEditing'),
               onTap: () => setState(() => _isEditing = true),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),

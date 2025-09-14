@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:myapp/models/CartItem.dart';
 import '../data/database.dart';
 
 class CartProvider extends ChangeNotifier {
@@ -24,11 +25,16 @@ class CartProvider extends ChangeNotifier {
     0.0,
     (sum, item) => sum + (item.product.price * item.quantity),
   );
+  //get status of the sale
+  
+
+
 
   void selectCustomer(Customer? customer) {
     _selectedCustomer = customer;
     notifyListeners();
   }
+  
 
   Future<void> addToCart(String productId) async {
     for (var item in _items) {
@@ -56,6 +62,8 @@ class CartProvider extends ChangeNotifier {
     await _database.clearCart();
     _selectedCustomer = null;
   }
+// get sale status
+
 
   Future<SaleWithItemsAndCustomer?> getSaleDetails() async {
     if (_items.isEmpty) return null;
@@ -66,6 +74,7 @@ class CartProvider extends ChangeNotifier {
       saleDate: DateTime.now(),
       totalAmount: subtotal,
       subtotal: subtotal,
+      status: 'pending',
     );
 
     List<SaleItemWithProduct> saleItemsWithProduct = [];

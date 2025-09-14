@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../data/database.dart';
 import '../../providers/cart_provider.dart';
 import '../../screens/add_edit_customer_screen.dart';
-
+import 'package:myapp/l10n/app_localizations.dart';
 class CustomerSelector extends StatelessWidget {
   const CustomerSelector({super.key});
 
@@ -30,7 +30,7 @@ class CustomerSelector extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                selectedCustomer?.name ?? 'Walk-in Customer',
+                selectedCustomer?.name ?? AppLocalizations.of(context)!.walkInCustomer,
                 style: Theme.of(context)
                     .textTheme
                     .titleMedium
@@ -61,14 +61,14 @@ class CustomerSelector extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Select a Customer',
+                     Text(
+                      AppLocalizations.of(context)!.selectCustomer,
                       style:
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                     ),
                     IconButton(
                       icon: const Icon(Icons.person_add_alt_1_rounded),
-                      tooltip: 'Add New Customer',
+                      tooltip: AppLocalizations.of(context)!.addNewCustomer,
                       onPressed: () async {
                         final added = await Navigator.of(context).push(
                           MaterialPageRoute(
@@ -107,7 +107,7 @@ class CustomerSelector extends StatelessWidget {
                         if (index == 0) {
                           return ListTile(
                             leading: const Icon(Icons.person_outline),
-                            title: const Text('Walk-in Customer'),
+                            title:  Text(AppLocalizations.of(context)!.walkInCustomer),
                             onTap: () {
                               Provider.of<CartProvider>(context, listen: false)
                                   .selectCustomer(null);
@@ -147,7 +147,7 @@ class CustomerSelector extends StatelessWidget {
                   padding: const EdgeInsets.all(8.0),
                   child: TextButton(
                     onPressed: () => Navigator.of(ctx).pop(),
-                    child: const Text('Close'),
+                    child:  Text(AppLocalizations.of(context)!.close),
                   ),
                 ),
               )

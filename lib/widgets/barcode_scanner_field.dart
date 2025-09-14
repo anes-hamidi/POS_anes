@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/barcode_service.dart';
+import '../l10n/app_localizations.dart';
 
 class BarcodeScannerField extends StatelessWidget {
   final TextEditingController controller;
@@ -14,7 +15,7 @@ class BarcodeScannerField extends StatelessWidget {
     return TextFormField(
       controller: controller,
       decoration: InputDecoration(
-        labelText: 'Barcode',
+        labelText: AppLocalizations.of(context)!.scanBarcode,
         border: const OutlineInputBorder(),
         suffixIcon: IconButton(
           icon: const Icon(Icons.qr_code_scanner),
@@ -32,7 +33,7 @@ class BarcodeScannerField extends StatelessWidget {
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Please enter or scan a barcode';
+          return AppLocalizations.of(context)!.enterValidBarcode;
         }
         return null;
       },

@@ -1,0 +1,252 @@
+{
+  "@@locale": "ar",
+
+  "appTitle": "نظام نقاط البيع",
+  "settings": "الإعدادات",
+  "businessInfo": "معلومات العمل",
+  "printer": "الطابعة",
+  "backupRestore": "النسخ الاحتياطي والاستعادة",
+  "language": "اللغة",
+
+  "adjustQuantity": "تعديل الكمية - {productName}",
+  "@adjustQuantity": {
+    "placeholders": {
+      "productName": {}
+    }
+  },
+
+  "selectLanguage": "اختر لغة",
+  "apply": "تطبيق",
+  "setExactQuantity": "تعيين الكمية بالضبط",
+  "cancel": "إلغاء",
+  "save": "حفظ",
+  "edit": "تعديل",
+  "delete": "حذف",
+  "selectPrinter": "اختر الطابعة",
+  "choosePrinter": "اختر طابعة",
+  "connect": "اتصل",
+  "searchByNameCategoryOrSku": "البحث بالاسم أو الفئة أو رمز SKU...",
+
+  "stock": "المخزون: {value}",
+  "@stock": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+    "allowSaleWithoutStock": "السماح بالبيع بدون مخزون",
+  "allowSaleWithoutStockDesc": "عند التفعيل، يمكن بيع المنتجات التي ليس لها مخزون بدون تأكيد."
+,
+    "addNewCustomer": "اضافة عميل",
+    "businessInformation": "معلومات العمل",
+"manageStoreDetails": "إدارة تفاصيل المتجر",
+"editBusinessInfo": "تعديل معلومات العمل",
+"businessName": "اسم المتجر",
+"phone": "الهاتف",
+"email": "البريد الإلكتروني",
+"address": "العنوان",
+"businessInfoUpdated": "تم تحديث معلومات العمل بنجاح",
+
+"outOfStock": "نفد المخزون",
+  "productOutOfStock": "المنتج {productName} غير متوفر في المخزون.",
+  "proceedWithoutStock": "المتابعة بدون مخزون",
+ "clearCart": "تفريغ السلة",
+  "clearCartConfirmation": "هل أنت متأكد أنك تريد تفريغ السلة؟",
+  "completeSaleConfirmation": "هل تريد إتمام عملية البيع؟",
+  "saveOrPrintPrompt": "هل ترغب في حفظ أو طباعة الفاتورة؟",
+  "saveAndPrint": "حفظ وطباعة",
+  "saveOnly": "حفظ فقط",
+  "saleCompletedAndInvoicePrinted": "تمت عملية البيع وتمت طباعة الفاتورة بنجاح.",
+  "saleCompletedWithoutPrinting": "تمت عملية البيع بدون طباعة الفاتورة.",
+  "errorCompletingSale": "حدث خطأ أثناء إتمام عملية البيع.",
+  "invoice": "فاتورة",
+  "invoiceNumber": "رقم الفاتورة: {number}",
+  "billedTo": "موجهة إلى:",
+  "phone": "الهاتف: {phone}",
+  "email": "البريد الإلكتروني: {email}",
+  "item": "المنتج",
+  "qty": "الكمية",
+  "price": "السعر",
+  "subtotal": "المجموع الجزئي",
+  "totalItems": "إجمالي: {count}",
+  "products": "عدد المنتجات: {count}",
+  "totalAmount": "الإجمالي:",
+  "totalInvoices": "إجمالي الفواتير",
+  "totalSpending": "إجمالي الإنفاق",
+  "invoices": "الفواتير",
+  "noInvoicesForCustomer": "لا توجد فواتير لهذا الزبون.",
+  "invoiceNumber": "فاتورة رقم {number}",
+  "invoiceDate": "التاريخ: {date}",
+   "@invoiceDate":{
+     "placeholders": {
+      "date": {}
+    }
+  },
+   "backupToGoogleDrive": "نسخ احتياطي إلى Google Drive",
+  "backupSuccess": "تم النسخ الاحتياطي بنجاح",
+  "restoreFromGoogleDrive": "استعادة من Google Drive",
+  "invoiceTotal": "المجموع: {amount} دج",
+  "invoiceSent": "تم إرسال الفاتورة إلى الطابعة.",
+  "errorPrinting": "خطأ أثناء الطباعة: {error}",
+  "pos": "البيع", 
+  "errorgeting": "خطأ أثناء التحميل: {error}",
+  "posTitle": "نقطة البيع",
+  "unknownDevice": "جهاز غير معروف",
+  "scanBarcode": "مسح الباركود",
+  "showAll": "عرض كل المنتجات",
+  "showTop": "عرض المنتجات الأعلى",
+  "categoryBoisson": "مشروبات",
+  "categoryJus": "عصائر",
+  "categoryJusGaz": "مشروبات غازية",
+  "categoryCanet": "علب",
+  "categoryMini": "صغيرة",
+  "categoryAll": "الكل",
+  "productAdded": "تمت إضافة المنتج {productName} إلى السلة",
+  "@productAdded": {
+    "placeholders": {
+      "productName": {}
+    }
+  },
+  "selectCustomer": "اختر عميل",
+  "productNotFound": "المنتج غير موجود",
+  "scanError": "خطأ في المسح",
+  "errorLoadingRanked": "خطأ في تحميل المنتجات المرتبة",
+  "noRankingData": "لا توجد بيانات تصنيف",
+  "errorLoadingProducts": "خطأ في تحميل المنتجات",
+  "noProductsFound": "لم يتم العثور على منتجات",
+  "currencySymbol": "د.ج",
+  "currencyFormat": "{totalSpending} د.ج ",
+
+  
+  "settings": "الإعدادات",
+  "businessInfo": "معلومات المتجر",
+  "businessInfoSubtitle": "إدارة تفاصيل المتجر، الشعار، ومعلومات الاتصال",
+  "editBusinessInfo": "تعديل معلومات المتجر",
+
+  "printerSettings": "إعدادات الطابعة",
+  "printerSettingsSubtitle": "الاتصال وإدارة الطابعات",
+  "printerConnection": "اتصال الطابعة",
+  "connecting": "جارٍ الاتصال…",
+  "connected": "متصل بـ {printerName}",
+  "disconnected": "غير متصل",
+  "selectPrinter": "اختر طابعة",
+  "connectedToPrinter": "✅ تم الاتصال بـ {printerName}",
+  "@connectedToPrinter": {
+    "placeholders": {
+      "printerName": {}
+    }
+  },
+  "connectionFailed": "❌ فشل الاتصال: {error}",
+  "failedToGetPrinters": "❌ فشل في الحصول على الطابعات: {error}",
+  "disconnectedMessage": "🔌 تم قطع الاتصال",
+
+  "databaseSubtitle": "نسخ احتياطي أو استعادة بياناتك",
+ 
+  "backupSaved": "✅ تم حفظ النسخة الاحتياطية في {path}",
+  "backupFailed": "❌ فشل النسخ الاحتياطي: {error}",
+  "restoreSuccess": "✅ تم استعادة قاعدة البيانات بنجاح",
+  "restoreFailed": "❌ فشلت الاستعادة: {error}",
+
+  "appSettings": "إعدادات التطبيق",
+  "appSettingsSubtitle": "تخصيص تجربة التطبيق",
+  "darkMode": "الوضع الداكن",
+  "language": "اللغة",
+  "languageSubtitle": "تغيير لغة التطبيق",
+  "selectLanguage": "اختر اللغة",
+  "cancel": "إلغاء",
+  "apply": "تطبيق",
+  "english": "الإنجليزية",
+  "arabic": "العربية",
+"enterValidBarcode": "امسح او ادخل الباركود",
+"saving": "حفض..",
+"enterValidQuantity": " ادخل الكمية الصحيحة",
+"enterValidCost": "ادخل سعر التكلفة ",
+"enterValidPrice": "ادخل سعر البيع ",
+  "walkInCustomer": "زبون عابر",
+  "close": "إغلاق",
+  "cart": "🛒 عربة التسوق",
+  "cartCleared": "تم مسح العربة",
+  "completeSale": "إتمام البيع",
+  "chooseAction": "اختر الإجراء",
+  "removeItem": "إزالة المنتج؟",
+  "remove": "إزالة",
+  "barcode": "الباركود",
+  "name": "الاسم",
+  "contactPerson": "الشخص المسؤول",
+  "email": "البريد الإلكتروني",
+  "phone": "الهاتف",
+  "lowStockWarning": "⚠ تحذير من انخفاض المخزون",
+  "ok": "موافق",
+  "yourBusinessName": "EasySales",
+  "contactEmail": "aneshamididev@gmail.com",
+  "contactPhone": "0673336972",
+  "noCustomerSelected": "لم يتم اختيار عميل",
+  "withoutCustomer": "بدون عميل",
+  "createCustomer": "إنشاء عميل",
+  "products": "المنتجات",
+  "posScreen": "شاشة نقاط البيع",
+  "manageCustomers": "إدارة العملاء",
+  "invoiceDetails": "تفاصيل الفاتورة",
+  "totalItems": "إجمالي العناصر",
+  "dashboard": "لوحة القيادة",
+  "businessInformation": "معلومات العمل",
+  "manageStoreDetails": "إدارة تفاصيل المتجر والشعار ومعلومات الاتصال",
+  "editBusinessInfo": "تعديل معلومات العمل",
+  "printerSettings": "إعدادات الطابعة",
+  "connectAndManagePrinters": "توصيل الطابعات وإدارتها",
+  "printerConnection": "اتصال الطابعة",
+  "disconnected": "🔌 غير متصل",
+  "database": "قاعدة البيانات",
+  "backupOrRestoreData": "نسخ احتياطي أو استعادة البيانات",
+  "backupDatabase": "نسخ احتياطي لقاعدة البيانات",
+  "restoreDatabase": "استعادة قاعدة البيانات",
+  "appSettings": "إعدادات التطبيق",
+  "customizeAppExperience": "تخصيص تجربة التطبيق",
+  "darkMode": "الوضع المظلم",
+  "lightMode": "الوضع المضيء",
+  "changeAppLanguage": "تغيير لغة التطبيق",
+  "productName": "اسم المنتج",
+  "description": "الوصف",
+  "price": "السعر",
+  "cost": "التكلفة",
+  "quantity": "الكمية",
+  "items": "الوحدات",
+  "newTotal": "الكمية الجديدة",
+  "topProduct": "افضل منتج {rankIndex}",
+  "@topProduct": {
+    "placeholders": {
+      "rankIndex": {}
+    }
+  },
+  "currentQty": " الكمية المتاحة",
+  "saveProduct": "حفظ المنتج",
+  "deleteProduct": "حذف المنتج",
+  "category": "الفئة",
+  "addNewProduct": "إضافة منتج جديد",
+  "editProduct": "تعديل المنتج",
+  "pleaseEnterAName": "الرجاء إدخال اسم.",
+  "dashboardTitle": "لوحة القيادة",
+  "toggleTheme": "تبديل النمط",
+  "customers": "العملاء",
+  "sales": "المبيعات",
+  
+  "areYouSureDeleteProduct": "هل أنت متأكد أنك تريد حذف {productName}؟",
+  "@areYouSureDeleteProduct": {
+    "placeholders": {
+      "productName": {}
+    }
+  },
+    "deleteCustomer": "مسح العميل",
+  "editCustomer": "تعديل العميل",
+  "saveCustomer": "حفظ العميل",
+  "pleaseEnterName": "ادخل الاسم",
+  "payments":"المدفوعات",
+
+"noCustomersFound":"لا يوجد عملاء",
+"getStartedByAddingYourFirstCustomer":"ابدء باضافة اول عميل",
+  "areYouSureDeleteCustomer": "هل أنت متأكد أنك تريد حذف {customerName}؟",
+  "@areYouSureDeleteCustomer": {
+    "placeholders": {
+      "customerName": {}
+    }
+  }
+}

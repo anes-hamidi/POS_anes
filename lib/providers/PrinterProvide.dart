@@ -1,30 +1,64 @@
 // lib/providers/printer_provider.dart
 import 'package:flutter/foundation.dart';
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
-import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/database.dart';
 import '../services/printer_service.dart';
+
+enum PrinterConnectionState { disconnected, connecting, connected }
+
 class PrinterProvider extends ChangeNotifier {
   final PrinterService printerService;
   final BlueThermalPrinter _bluetooth = BlueThermalPrinter.instance;
 
   BluetoothDevice? _connectedDevice;
-  bool _isConnecting = false;
+  PrinterConnectionState _state = PrinterConnectionState.disconnected;
 
   static const _prefKey = 'connected_printer_mac';
 
   PrinterProvider({required this.printerService}) {
+    _listenToConnectionChanges();
     _tryReconnect();
   }
 
   BluetoothDevice? get connectedDevice => _connectedDevice;
-  bool get isConnected => _connectedDevice != null;
-  bool get isConnecting => _isConnecting;
+  PrinterConnectionState get state => _state;
+
+  bool get isConnected => _state == PrinterConnectionState.connected;
+  bool get isConnecting => _state == PrinterConnectionState.connecting;
+
+  void _setState(PrinterConnectionState newState) {
+    if (_state != newState) {
+      _state = newState;
+      notifyListeners();
+    }
+  }
+
+  
+
+  void _listenToConnectionChanges() {
+    _bluetooth.onStateChanged().listen((val) async {
+      if (kDebugMode) print("🔄 Printer state changed: $val");
+
+      switch (val) {
+        case BlueThermalPrinter.CONNECTED:
+          _setState(PrinterConnectionState.connected);
+          break;
+        case BlueThermalPrinter.DISCONNECTED:
+          _connectedDevice = null;
+          _setState(PrinterConnectionState.disconnected);
+          break;
+        case BlueThermalPrinter.DISCONNECT_REQUESTED:
+          _setState(PrinterConnectionState.connecting);
+          break;
+        default:
+          break;
+      }
+    });
+  }
 
   Future<void> _tryReconnect() async {
-    _isConnecting = true;
-    notifyListeners();
+    _setState(PrinterConnectionState.connecting);
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -37,19 +71,16 @@ class PrinterProvider extends ChangeNotifier {
         orElse: () => throw Exception('Saved printer not found'),
       );
 
-      await connectTo(device, save: false); // silent reconnect
+      await connectTo(device, save: false);
     } catch (e) {
       if (kDebugMode) print('Auto-reconnect failed: $e');
     } finally {
-      _isConnecting = false;
-      notifyListeners();
+      if (!isConnected) _setState(PrinterConnectionState.disconnected);
     }
   }
 
   Future<void> connectTo(BluetoothDevice device, {bool save = true}) async {
-    _isConnecting = true;
-    notifyListeners();
-
+    _setState(PrinterConnectionState.connecting);
     try {
       await _bluetooth.connect(device);
       _connectedDevice = device;
@@ -58,9 +89,13 @@ class PrinterProvider extends ChangeNotifier {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_prefKey, device.address ?? '');
       }
+
     } finally {
-      _isConnecting = false;
-      notifyListeners();
+      if (await _bluetooth.isConnected == true) {
+        _setState(PrinterConnectionState.connected);
+      } else {
+        _setState(PrinterConnectionState.disconnected);
+      }
     }
   }
 
@@ -73,14 +108,14 @@ class PrinterProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_prefKey);
 
-    notifyListeners();
+    _setState(PrinterConnectionState.disconnected);
   }
 
   Future<List<BluetoothDevice>> getBondedDevices() async {
     return await _bluetooth.getBondedDevices();
   }
 
-  Future<void> printInvoice(SaleWithItemsAndCustomer saleDetails, BuildContext context) async {
+  Future<void> printInvoice(SaleWithItemsAndCustomer saleDetails, context) async {
     if (!isConnected) throw Exception('No printer connected.');
     await printerService.printInvoice(saleDetails, context);
   }

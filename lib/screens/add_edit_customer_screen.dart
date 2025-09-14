@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../data/database.dart';
 import 'package:drift/drift.dart' as drift;
 import '../widgets/common/themed_scaffold.dart';
+import 'package:myapp/l10n/app_localizations.dart';
 
 class AddEditCustomerScreen extends StatefulWidget {
   final Customer? customer;
@@ -59,7 +60,7 @@ class _AddEditCustomerScreenState extends State<AddEditCustomerScreen> {
   Widget build(BuildContext context) {
     return ThemedScaffold(
       appBar: AppBar(
-        title: Text(widget.customer == null ? 'Add Customer' : 'Edit Customer'),
+        title: Text(widget.customer == null ? AppLocalizations.of(context)!.addNewCustomer : AppLocalizations.of(context)!.editCustomer),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -69,10 +70,10 @@ class _AddEditCustomerScreenState extends State<AddEditCustomerScreen> {
             children: <Widget>[
               TextFormField(
                 initialValue: _name,
-                decoration: const InputDecoration(labelText: 'Name'),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.name),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter a name.';
+                    return AppLocalizations.of(context)!.pleaseEnterName;
                   }
                   return null;
                 },
@@ -83,7 +84,7 @@ class _AddEditCustomerScreenState extends State<AddEditCustomerScreen> {
               const SizedBox(height: 16),
               TextFormField(
                 initialValue: _email,
-                decoration: const InputDecoration(labelText: 'Email'),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.email),
                 keyboardType: TextInputType.emailAddress,
                 onSaved: (value) {
                   _email = value;
@@ -92,7 +93,7 @@ class _AddEditCustomerScreenState extends State<AddEditCustomerScreen> {
               const SizedBox(height: 16),
               TextFormField(
                 initialValue: _phone,
-                decoration: const InputDecoration(labelText: 'Phone'),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.phone),
                 keyboardType: TextInputType.phone,
                 onSaved: (value) {
                   _phone = value;
@@ -101,7 +102,7 @@ class _AddEditCustomerScreenState extends State<AddEditCustomerScreen> {
               const SizedBox(height: 16),
               TextFormField(
                 initialValue: _address,
-                decoration: const InputDecoration(labelText: 'Address'),
+                decoration: InputDecoration(labelText: AppLocalizations.of(context)!.address),
                 onSaved: (value) {
                   _address = value;
                 },
@@ -109,7 +110,7 @@ class _AddEditCustomerScreenState extends State<AddEditCustomerScreen> {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _saveForm,
-                child: const Text('Save Customer'),
+                child: Text(AppLocalizations.of(context)!.saveCustomer),
               ),
             ],
           ),

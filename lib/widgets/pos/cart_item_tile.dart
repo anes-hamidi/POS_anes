@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:myapp/models/CartItem.dart';
 import 'package:provider/provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../data/database.dart';

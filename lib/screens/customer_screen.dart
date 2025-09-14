@@ -7,6 +7,7 @@ import '../widgets/add_edit_customer_dialog.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/entity_list.dart';
 import '../services/confirmation_dialog_service.dart';
+import 'package:myapp/l10n/app_localizations.dart';
 
 class CustomerScreen extends StatelessWidget {
   const CustomerScreen({super.key});
@@ -18,7 +19,7 @@ class CustomerScreen extends StatelessWidget {
 
     return ThemedScaffold(
       appBar: AppBar(
-        title: const Text('Manage Customers'),
+        title:  Text(AppLocalizations.of(context)!.manageCustomers),
       ),
       body: StreamBuilder<List<Customer>>(
         stream: db.select(db.customers).watch(),
@@ -27,13 +28,13 @@ class CustomerScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(child: Text('${AppLocalizations.of(context)!.errorgeting}: ${snapshot.error}'));
           }
           final customers = snapshot.data ?? [];
           if (customers.isEmpty) {
-            return const EmptyState(
-              title: 'No Customers Found',
-              message: 'Get started by adding your first customer.',
+            return  EmptyState(
+              title: AppLocalizations.of(context)!.noCustomersFound,
+              message: AppLocalizations.of(context)!.getStartedByAddingYourFirstCustomer,
             );
           }
           return EntityList<Customer>(
@@ -52,8 +53,8 @@ class CustomerScreen extends StatelessWidget {
             onDelete: (customer) async {
               final confirmed = await confirmationDialogService.showConfirmationDialog(
                 context,
-                title: 'Delete Customer',
-                content: 'Are you sure you want to delete ${customer.name}?',
+                title: AppLocalizations.of(context)!.deleteCustomer,
+                content: '${AppLocalizations.of(context)!.areYouSureDeleteCustomer} ${customer.name}?',
               );
               if (confirmed == true) {
                 db.delete(db.customers).where((tbl) => tbl.id.equals(customer.id));
@@ -65,7 +66,7 @@ class CustomerScreen extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showAddEditCustomerDialog(context),
         icon: const Icon(Icons.add),
-        label: const Text('Add Customer'),
+        label: Text(AppLocalizations.of(context)!.addNewCustomer),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:myapp/data/database.dart';
 import 'package:myapp/screens/add_edit_customer_screen.dart';
 import 'package:provider/provider.dart';
 import '../../providers/cart_provider.dart';
@@ -7,6 +8,7 @@ import '../../services/confirmation_dialog_service.dart';
 import '../../services/sale_service.dart';
 import 'cart_list.dart';
 import 'customer_selector.dart';
+import 'package:myapp/l10n/app_localizations.dart';
 
 class CartPanel extends StatelessWidget {
   const CartPanel({super.key});
@@ -34,7 +36,7 @@ class CartPanel extends StatelessWidget {
                 // ➕ Quick Add Customer Button
                 IconButton(
                   icon: const Icon(Icons.person_add_alt_1),
-                  tooltip: 'Add New Customer',
+                  tooltip: AppLocalizations.of(context)!.addNewCustomer,
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -76,7 +78,7 @@ class CartSummary extends StatelessWidget {
         NumberFormat.currency(locale: 'en_AR', symbol: 'DA ');
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-
+     
     return Consumer<CartProvider>(
       builder: (context, cart, child) {
         final totalItems = cart.items.length;
@@ -107,14 +109,14 @@ class CartSummary extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Items: $totalItems',
+                      '${AppLocalizations.of(context)!.items} $totalItems',
                       style: textTheme.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w500,
                         color: colorScheme.secondary,
                       ),
                     ),
                     Text(
-                      'Qty: $totalQuantity',
+                      '${AppLocalizations.of(context)!.quantity} $totalQuantity',
                       style: textTheme.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w500,
                         color: colorScheme.secondary,
@@ -129,7 +131,7 @@ class CartSummary extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Total:',
+                      AppLocalizations.of(context)!.totalAmount,
                       style: textTheme.titleLarge
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
@@ -161,134 +163,164 @@ class CartSummary extends StatelessWidget {
                       IconButton(
                         icon: const Icon(Icons.delete_forever,
                             color: Colors.red),
-                        tooltip: 'Clear Cart',
+                        tooltip: AppLocalizations.of(context)!.clearCart,
                         onPressed: () async {
                           final confirmed = await context
                               .read<ConfirmationDialogService>()
                               .showConfirmationDialog(
                                 context,
-                                title: 'Clear Cart?',
+                                title: AppLocalizations.of(context)!.clearCart,
                                 content:
-                                    'Are you sure you want to remove all items?',
+                                    AppLocalizations.of(context)!.clearCartConfirmation,
                               );
                           if (confirmed == true) {
                             await cart.clearCart();
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Cart cleared'),
+                              SnackBar(
+                                content: Text(AppLocalizations.of(context)!.cartCleared),
                                 backgroundColor: Colors.orange,
                               ),
                             );
                           }
                         },
                       ),
-
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.point_of_sale_rounded, size: 28),
-                        label: const Text('Complete Sale'),
-                        onPressed: cart.items.isEmpty
+Expanded(
+  child: ElevatedButton.icon(
+    icon: const Icon(Icons.point_of_sale_rounded, size: 28),
+    label:  Text(AppLocalizations.of(context)!.completeSale),
+   onPressed: cart.items.isEmpty
     ? null
     : () async {
         final confirmed = await context
             .read<ConfirmationDialogService>()
             .showConfirmationDialog(
               context,
-              title: 'Complete Sale?',
-              content:
-                  'This will finalize the sale. Do you want to proceed?',
+              title: '${AppLocalizations.of(context)!.completeSale}?',
+              content: AppLocalizations.of(context)!.completeSaleConfirmation,
             );
 
-        if (confirmed == true) {
-          // ✅ Show custom choice dialog
-          final selectedAction = await showDialog<String>(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('Choose Action'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    "Would you like to print an invoice or just save the sale?",
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      // 🖨 Print Invoice Button
-                      Column(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.print, size: 40, color: Colors.green),
-                            onPressed: () => Navigator.pop(ctx, 'print'),
-                          ),
-                          const Text("Save & Print", style: TextStyle(fontWeight: FontWeight.w600)),
-                        ],
-                      ),
-                      // 💾 Save Only Button
-                      Column(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.save, size: 40, color: Colors.blue),
-                            onPressed: () => Navigator.pop(ctx, 'save'),
-                          ),
-                          const Text("Save Only", style: TextStyle(fontWeight: FontWeight.w600)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cancel'),
+        if (confirmed != true) return;
+
+        final confirmationService = context.read<ConfirmationDialogService>();
+        final Customer? selectedCustomer =
+            await confirmationService.askForCustomerOrContinue(context);
+
+        if (selectedCustomer == null && !context.mounted) return; 
+        // null = proceed without OR cancelled. If cancelled, just stop.
+
+        // ✅ Step 2: Ask for save/print
+        final selectedAction = await showDialog<String>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title:  Text(AppLocalizations.of(context)!.chooseAction),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  AppLocalizations.of(context)!.saveOrPrintPrompt,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Column(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.print, size: 40, color: Colors.green),
+                          onPressed: () => Navigator.pop(ctx, 'print'),
+                        ),
+                        Text(
+                          AppLocalizations.of(context)!.saveAndPrint,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.save, size: 40, color: Colors.blue),
+                          onPressed: () => Navigator.pop(ctx, 'save'),
+                        ),
+                        Text(
+                          AppLocalizations.of(context)!.saveOnly,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
             ),
-          );
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child:  Text(AppLocalizations.of(context)!.cancel),
+              ),
+            ],
+          ),
+        );
 
-          if (selectedAction != null) {
-            try {
-              final saleService = context.read<SaleService>();
+        if (selectedAction == null) return;
 
-              if (selectedAction == 'print') {
-                // Save and print
-                await saleService.createAndPrintInvoice(cart, context);
-              } else {
-                // Save without printing
-                await saleService.createAndSaveSale(cart ,context );
-              }
+        try {
+          final saleService = context.read<SaleService>();
 
-              await cart.clearCart();
-
-              if (context.mounted) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(selectedAction == 'print'
-                        ? 'Sale completed & invoice printed!'
-                        : 'Sale completed without printing.'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              }
-            } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Error completing sale: $e'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
+          if (selectedAction == 'print') {
+            await saleService.createAndPrintInvoice(cart, context, selectedCustomer);
+          } else {
+            await saleService.createAndSaveSale(cart, context, selectedCustomer);
           }
+
+          await cart.clearCart();
+          // after await cart.clearCart();
+if (context.mounted) {
+  // ✅ Ask user if they want to record payment
+  
+
+
+
+  Navigator.pop(context); // close CartPanel
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        selectedAction == 'print'
+            ? AppLocalizations.of(context)!.saleCompletedAndInvoicePrinted
+            : AppLocalizations.of(context)!.saleCompletedWithoutPrinting,
+      ),
+      backgroundColor: Colors.green,
+    ),
+  );
+}
+
+
+          if (context.mounted) {
+            Navigator.pop(context); // close CartPanel
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  selectedAction == 'print'
+                      ? AppLocalizations.of(context)!.saleCompletedAndInvoicePrinted
+                      : AppLocalizations.of(context)!.saleCompletedWithoutPrinting,
+                ),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  '${AppLocalizations.of(context)!.errorCompletingSale}: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       },
 
-                      )
-                    ),
-                  ],
+),
+
+                )],
                 ),
               ],
             ),

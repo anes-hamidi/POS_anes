@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:myapp/l10n/app_localizations.dart';
 import '../data/database.dart';
 
 class InvoiceDetailScreen extends StatelessWidget {
@@ -16,50 +17,52 @@ class InvoiceDetailScreen extends StatelessWidget {
     final totalItems = items.fold<int>(0, (sum, item) => sum + item.saleItem.quantity);
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Invoice Details")),
+      appBar: AppBar(title:Text(AppLocalizations.of(context)!.invoice),
+),
       body: Padding(
         padding: const EdgeInsets.all(12),
         child: ListView(
           children: [
-            _buildHeader(sale),
+            _buildHeader(sale, context),
             const SizedBox(height: 12),
-            if (customer != null) _buildCustomerInfo(customer),
+            if (customer != null) _buildCustomerInfo(customer, context),
             const SizedBox(height: 20),
-            _buildItemsTable(items),
+            _buildItemsTable(items, context),
             const SizedBox(height: 20),
-            _buildTotals(sale.totalAmount, totalItems, items.length),
+            _buildTotals(sale.totalAmount, totalItems, items.length, context),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader(Sale sale) {
+  Widget _buildHeader(Sale sale, BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("INVOICE", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        Text("Invoice #: ${sale.id.substring(0, 8)}"),
-        Text("Date: ${DateFormat.yMMMd().add_Hm().format(sale.saleDate)}"),
+        Text(AppLocalizations.of(context)!.invoice,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        Text("${AppLocalizations.of(context)!.invoice} #: ${sale.id.substring(0, 8)}"),
+        Text(AppLocalizations.of(context)!.invoiceDate(DateFormat.yMMMd().format(sale.saleDate))),
         const Divider(),
       ],
     );
   }
 
-  Widget _buildCustomerInfo(Customer customer) {
+  Widget _buildCustomerInfo(Customer customer, BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Billed To:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        Text(AppLocalizations.of(context)!.billedTo, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         Text(customer.name),
-        if (customer.phone != null) Text("Phone: ${customer.phone}"),
-        if (customer.email != null) Text("Email: ${customer.email}"),
+        if (customer.phone != null) Text("${AppLocalizations.of(context)!.cphone}: ${customer.phone}"),
+        if (customer.email != null) Text("${AppLocalizations.of(context)!.cemail}: ${customer.email}"),
         const Divider(),
       ],
     );
   }
 
-  Widget _buildItemsTable(List<SaleItemWithProduct> items) {
+  Widget _buildItemsTable(List<SaleItemWithProduct> items, BuildContext context) {
     return Table(
       border: TableBorder.all(color: Colors.grey.shade300),
       columnWidths: const {
@@ -71,11 +74,11 @@ class InvoiceDetailScreen extends StatelessWidget {
       children: [
         TableRow(
           decoration: BoxDecoration(color: Colors.grey.shade200),
-          children: const [
-            Padding(padding: EdgeInsets.all(6), child: Text("Item", style: TextStyle(fontWeight: FontWeight.bold))),
-            Padding(padding: EdgeInsets.all(6), child: Text("Qty", style: TextStyle(fontWeight: FontWeight.bold))),
-            Padding(padding: EdgeInsets.all(6), child: Text("Price", style: TextStyle(fontWeight: FontWeight.bold))),
-            Padding(padding: EdgeInsets.all(6), child: Text("Subtotal", style: TextStyle(fontWeight: FontWeight.bold))),
+          children: [
+            Padding(padding: EdgeInsets.all(6), child: Text(AppLocalizations.of(context)!.item, style: TextStyle(fontWeight: FontWeight.bold))),
+            Padding(padding: EdgeInsets.all(6), child: Text(AppLocalizations.of(context)!.qty, style: TextStyle(fontWeight: FontWeight.bold))),
+            Padding(padding: EdgeInsets.all(6), child: Text(AppLocalizations.of(context)!.price, style: TextStyle(fontWeight: FontWeight.bold))),
+            Padding(padding: EdgeInsets.all(6), child: Text(AppLocalizations.of(context)!.subtotal, style: TextStyle(fontWeight: FontWeight.bold))),
           ],
         ),
         for (var item in items)
@@ -91,14 +94,14 @@ class InvoiceDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTotals(double totalAmount, int totalItems, int totalProducts) {
+  Widget _buildTotals(double totalAmount, int totalItems, int totalProducts, BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Text("Total Items: $totalItems"),
-        Text("Products: $totalProducts"),
+        Text("${AppLocalizations.of(context)!.totalItems}: $totalItems"),
+        Text("${AppLocalizations.of(context)!.products}: $totalProducts"),
         const Divider(),
-        Text("TOTAL: ${totalAmount.toStringAsFixed(2)} DA",
+        Text("${AppLocalizations.of(context)!.totalAmount}: ${totalAmount.toStringAsFixed(2)} DA",
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
       ],
     );

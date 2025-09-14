@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:myapp/models/CartItem.dart';
 import 'package:provider/provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../data/database.dart';
@@ -90,7 +91,7 @@ class _CartGridCard extends StatelessWidget {
                           fit: BoxFit.cover,
                         )
                       : null,
-                  color: colorScheme.surfaceVariant,
+                  color: colorScheme.surfaceContainerHighest,
                 ),
                 child: item.product.imageUrl == null
                     ? Center(
@@ -197,7 +198,7 @@ class _CartGridCard extends StatelessWidget {
               textAlign: TextAlign.center,
               decoration: InputDecoration(
                 filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceVariant,
+                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),

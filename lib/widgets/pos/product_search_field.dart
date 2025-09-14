@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../l10n/app_localizations.dart';
 
 class ProductSearchField extends StatefulWidget {
   final Function(String) onSearchChanged;
@@ -30,7 +31,7 @@ class _ProductSearchFieldState extends State<ProductSearchField> {
         onChanged: widget.onSearchChanged,
         style: theme.textTheme.bodyLarge,
         decoration: InputDecoration(
-          hintText: 'Search by name, category, or SKU...',
+          hintText: AppLocalizations.of(context)!.searchByNameCategoryOrSku,
           hintStyle: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.6)),
           prefixIcon: Icon(Icons.search, color: theme.colorScheme.primary),
           suffixIcon: _searchController.text.isNotEmpty

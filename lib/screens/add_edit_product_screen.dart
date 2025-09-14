@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../data/database.dart';
 import '../widgets/barcode_scanner_field.dart';
+import 'package:myapp/l10n/app_localizations.dart';
 
 class AddEditProductScreen extends StatefulWidget {
   final Product? product;
@@ -37,7 +38,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   // initialize rankingScore to 0.0
   double _rankingScore = 0.0; // Not used in form, but can
 
-  final List<String> _categories = ['boisson', 'jus', 'jus gaz', 'canet', 'mini'];
+  final _categories = [ 'boisson', 'jus', 'jus gaz', 'canet', 'mini' ];
 
   @override
   void initState() {
@@ -212,7 +213,7 @@ Widget _buildImagePreview() {
 
     return ThemedScaffold(
       appBar: AppBar(
-        title: Text(widget.product == null ? 'Add New Product' : 'Edit Product'),
+        title: Text(widget.product == null ? AppLocalizations.of(context)!.addNewProduct : AppLocalizations.of(context)!.editProduct),
         actions: [
           if (widget.product != null)
             IconButton(
@@ -232,17 +233,22 @@ Widget _buildImagePreview() {
                   children: [
                     _buildImagePicker(context, colorScheme),
                     const SizedBox(height: 24),
+                    BarcodeScannerField(controller: _barcodeController),
+                    const SizedBox(height: 16),    
+                    _buildDropdown(),
+                    const SizedBox(height: 16),
+
                     _buildTextField(
                       initialValue: _name,
-                      labelText: 'Product Name',
-                      validator: (value) => 
-                          value == null || value.isEmpty ? 'Please enter a name.' : null,
+                      labelText: AppLocalizations.of(context)!.productName,
+                      validator: (value) =>
+                          value == null || value.isEmpty ? AppLocalizations.of(context)!.pleaseEnterAName : null,
                       onSaved: (value) => _name = value!,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8),
                     _buildTextField(
                       initialValue: _description,
-                      labelText: 'Description',
+                      labelText: AppLocalizations.of(context)!.description,
                       maxLines: 3,
                       onSaved: (value) => _description = value!,
                     ),
@@ -252,12 +258,12 @@ Widget _buildImagePreview() {
                         Expanded(
                           child: _buildTextField(
                             initialValue: _price.toString(),
-                            labelText: 'Price',
+                            labelText: AppLocalizations.of(context)!.price,
                             keyboardType: TextInputType.number,
-                            validator: (value) => 
-                                (value == null || double.tryParse(value) == null) 
-                                ? 'Enter a valid price.' 
-                                : null,
+                            validator: (value) =>
+                                (value == null || double.tryParse(value) == null)
+                                    ? AppLocalizations.of(context)!.enterValidPrice
+                                    : null,
                             onSaved: (value) => _price = double.parse(value!),
                           ),
                         ),
@@ -265,12 +271,12 @@ Widget _buildImagePreview() {
                         Expanded(
                           child: _buildTextField(
                             initialValue: _cost.toString(),
-                            labelText: 'Cost',
+                            labelText: AppLocalizations.of(context)!.cost,
                             keyboardType: TextInputType.number,
-                            validator: (value) => 
-                                (value == null || double.tryParse(value) == null) 
-                                ? 'Enter a valid cost.' 
-                                : null,
+                            validator: (value) =>
+                                (value == null || double.tryParse(value) == null)
+                                    ? AppLocalizations.of(context)!.enterValidCost
+                                    : null,
                             onSaved: (value) => _cost = double.parse(value!),
                           ),
                         ),
@@ -279,18 +285,16 @@ Widget _buildImagePreview() {
                     const SizedBox(height: 16),
                     _buildTextField(
                       initialValue: _quantity.toString(),
-                      labelText: 'Quantity',
+                      labelText: AppLocalizations.of(context)!.quantity,
                       keyboardType: TextInputType.number,
-                      validator: (value) => 
-                          (value == null || int.tryParse(value) == null) 
-                          ? 'Enter a valid quantity.' 
-                          : null,
+                      validator: (value) =>
+                          (value == null || int.tryParse(value) == null)
+                              ? AppLocalizations.of(context)!.enterValidQuantity
+                              : null,
                       onSaved: (value) => _quantity = int.parse(value!),
                     ),
-                    const SizedBox(height: 16),
-                    _buildDropdown(),
-                    const SizedBox(height: 16),
-                    BarcodeScannerField(controller: _barcodeController),
+                  
+                   
                     const SizedBox(height: 32),
                     ElevatedButton.icon(
                       icon: _isSaving 
@@ -300,7 +304,7 @@ Widget _buildImagePreview() {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.save_alt_outlined),
-                      label: Text(_isSaving ? 'Saving...' : 'Save Product'),
+                      label: Text(_isSaving ? AppLocalizations.of(context)!.saving : AppLocalizations.of(context)!.saveProduct),
                       onPressed: _isSaving ? null : _saveForm,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -397,15 +401,17 @@ Widget _buildTextField({
 
   Widget _buildDropdown() {
     return DropdownButtonFormField<String>(
-      value: _category,
+      value: _categories.isNotEmpty ? _categories.first : null,
       decoration: InputDecoration(
-        labelText: 'Category',
+        labelText: AppLocalizations.of(context)!.category,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
       ),
       items: _categories.map((String category) {
         return DropdownMenuItem<String>(
           value: category,
-          child: Text(category),
+          child: Text(_categories.contains(category)
+              ? category[0].toUpperCase() + category.substring(1)
+              : category),
         );
       }).toList(),
       onChanged: (newValue) {

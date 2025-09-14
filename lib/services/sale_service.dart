@@ -13,6 +13,7 @@ class SaleService {
   final PdfService pdfService;
   final PrinterService printerService;
   final Uuid _uuid = const Uuid();
+  String? lastCreatedOrderId;
 
   SaleService({
     required this.db,
@@ -22,11 +23,28 @@ class SaleService {
 
   /// 🔢 Minimum quantity before alert
   static const int lowStockThreshold = 5;
+  /// 📊 Update rankingScore based on quantity sold
+  /// // record payment
 
-  Future<void> createAndSaveSale(CartProvider cart, BuildContext context) async {
+  Future<void> _rankingScoreUpdate(String productId, int qtySold) async {
+    final product = await (db.select(db.products)
+          ..where((tbl) => tbl.id.equals(productId)))
+        .getSingleOrNull();
+
+    if (product != null) {
+      final newScore = (product.rankingScore ?? 0) + qtySold;
+
+      await (db.update(db.products)..where((tbl) => tbl.id.equals(productId))).write(
+        ProductsCompanion(rankingScore: Value(newScore)),
+      );
+    }
+  }
+
+  Future<void> createAndSaveSale(CartProvider cart, BuildContext context, Customer? selectedCustomer) async {
     final lowStockProducts = <String>[]; // collect names for alert
     final saleId = _uuid.v4();
     final saleDate = DateTime.now();
+  lastCreatedOrderId = saleId;
 
     final sale = SalesCompanion(
       id: Value(saleId),
@@ -45,6 +63,8 @@ class SaleService {
         quantity: Value(cartItem.quantity),
         priceAtSale: Value(cartItem.product.price),
       ));
+      await _rankingScoreUpdate(cartItem.product.id, cartItem.quantity);
+
 
       final lowStock = await _decrementProductStock(cartItem.product.id, cartItem.quantity);
       if (lowStock != null) lowStockProducts.add(lowStock);
@@ -53,10 +73,12 @@ class SaleService {
     _showLowStockAlert(context, lowStockProducts);
   }
 
-  Future<void> createAndPrintInvoice(CartProvider cart, BuildContext context) async {
+  Future<void> createAndPrintInvoice(CartProvider cart, BuildContext context, Customer? selectedCustomer) async {
   final lowStockProducts = <String>[];
   final saleId = _uuid.v4();
   final saleDate = DateTime.now();
+  lastCreatedOrderId = saleId;
+
 
   final sale = SalesCompanion(
     id: Value(saleId),
@@ -75,9 +97,12 @@ class SaleService {
       quantity: Value(cartItem.quantity),
       priceAtSale: Value(cartItem.product.price),
     ));
+    await _rankingScoreUpdate(cartItem.product.id, cartItem.quantity);
+
     final lowStock = await _decrementProductStock(cartItem.product.id, cartItem.quantity);
     if (lowStock != null) lowStockProducts.add(lowStock);
   }
+  
 
   final saleDetails = await db.getSaleWithDetails(saleId);
 

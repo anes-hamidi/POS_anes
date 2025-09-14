@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/providers/PrinterProvide.dart';
 import 'package:provider/provider.dart';
 import 'package:barcode_scan2/barcode_scan2.dart';
-import '../widgets/printer_connection_dialog.dart';
 import '../data/database.dart';
 import '../providers/cart_provider.dart';
 import '../widgets/pos/product_search_field.dart';
@@ -19,7 +19,8 @@ class POSScreen extends StatefulWidget {
 class _POSScreenState extends State<POSScreen> {
   String _searchQuery = '';
   String _selectedCategory = 'All';
-bool _showRanked = false;
+  bool _showRanked = false;
+
   Future<void> _scanBarcode() async {
     try {
       final ScanResult result = await BarcodeScanner.scan();
@@ -28,16 +29,18 @@ bool _showRanked = false;
       if (!mounted || barcode == '-1') return; // User cancelled
 
       final db = context.read<AppDatabase>();
-      final product = await (db.select(db.products)
-            ..where((p) => p.barcode.equals(barcode)))
-          .getSingleOrNull();
+      final product = await (db.select(
+        db.products,
+      )..where((p) => p.barcode.equals(barcode))).getSingleOrNull();
 
       if (product != null) {
         context.read<CartProvider>().addToCart(product.id);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${product.name} added to cart.'),
+              content: Text(
+                AppLocalizations.of(context)!.productAdded(product.name),
+              ),
               backgroundColor: Colors.green,
             ),
           );
@@ -45,8 +48,8 @@ bool _showRanked = false;
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Product not found.'),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.productNotFound),
               backgroundColor: Colors.red,
             ),
           );
@@ -55,7 +58,11 @@ bool _showRanked = false;
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error scanning barcode: $e')),
+          SnackBar(
+            content: Text(
+              "${AppLocalizations.of(context)!.scanError}: $e",
+            ),
+          ),
         );
       }
     }
@@ -65,11 +72,13 @@ bool _showRanked = false;
   Widget build(BuildContext context) {
     final printerProvider = context.watch<PrinterProvider>();
     final db = context.read<AppDatabase>();
+    final t = AppLocalizations.of(context)!; // shortcut
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("POS Screen"),
+        title: Text(t.posTitle),
         actions: [
+          // --- Printer Icon --- //
           IconButton(
             icon: Icon(
               printerProvider.isConnected
@@ -92,14 +101,16 @@ bool _showRanked = false;
                     builder: (_) {
                       return ListView(
                         children: devices
-                            .map((device) => ListTile(
-                                  title: Text(device.name ?? 'Unknown'),
-                                  subtitle: Text(device.address ?? ''),
-                                  onTap: () async {
-                                    Navigator.pop(context);
-                                    await printerProvider.connectTo(device);
-                                  },
-                                ))
+                            .map(
+                              (device) => ListTile(
+                                title: Text(device.name ?? t.unknownDevice),
+                                subtitle: Text(device.address ?? ''),
+                                onTap: () async {
+                                  Navigator.pop(context);
+                                  await printerProvider.connectTo(device);
+                                },
+                              ),
+                            )
                             .toList(),
                       );
                     },
@@ -108,19 +119,21 @@ bool _showRanked = false;
               }
             },
           ),
+          // --- Barcode Scan --- //
           IconButton(
             icon: const Icon(Icons.qr_code_scanner),
-            tooltip: 'Scan Barcode',
+            tooltip: t.scanBarcode,
             onPressed: _scanBarcode,
           ),
+          // --- Ranking toggle --- //
           IconButton(
-  icon: Icon(
-    _showRanked ? Icons.star : Icons.star_border,
-    color: _showRanked ? Colors.amber : Colors.grey,
-  ),
-  tooltip: _showRanked ? 'All' : 'Top',
-  onPressed: () => setState(() => _showRanked = !_showRanked),
-),
+            icon: Icon(
+              _showRanked ? Icons.star : Icons.star_border,
+              color: _showRanked ? Colors.amber : Colors.grey,
+            ),
+            tooltip: _showRanked ? t.showAll : t.showTop,
+            onPressed: () => setState(() => _showRanked = !_showRanked),
+          ),
         ],
       ),
 
@@ -145,133 +158,128 @@ bool _showRanked = false;
                       setState(() => _selectedCategory = value);
                     }
                   },
-                  items: const [
-                    DropdownMenuItem(value: 'boisson', child: Text('boisson')),
-                    DropdownMenuItem(value: 'jus', child: Text('jus')),
-                    DropdownMenuItem(value: 'jus gaz', child: Text('jus gaz')),
-                    DropdownMenuItem(value: 'canet', child: Text('canet')),
-                    DropdownMenuItem(value: 'mini', child: Text('mini')),
-                    DropdownMenuItem(value: 'All', child: Text('All')),
+                  items: [
+                    DropdownMenuItem(
+                        value: 'boisson', child: Text(t.categoryBoisson)),
+                    DropdownMenuItem(
+                        value: 'jus', child: Text(t.categoryJus)),
+                    DropdownMenuItem(
+                        value: 'jus gaz', child: Text(t.categoryJusGaz)),
+                    DropdownMenuItem(
+                        value: 'canet', child: Text(t.categoryCanet)),
+                    DropdownMenuItem(
+                        value: 'mini', child: Text(t.categoryMini)),
+                    DropdownMenuItem(
+                        value: 'All', child: Text(t.categoryAll)),
                   ],
                 ),
               ],
             ),
           ),
-        Expanded(
-  child: _showRanked
-      ? FutureBuilder<List<Map<String, dynamic>>>(
-          future: db.getRankedProducts(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              return Center(
-                child: Text("Error loading ranked products: ${snapshot.error}"),
-              );
-            }
+          // --- Product List (Ranked / All) --- //
+          Expanded(
+            child: _showRanked
+                ? FutureBuilder<List<Product>>(
+                    future: db.getRankedProducts(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const Center(
+                            child: CircularProgressIndicator());
+                      }
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Text(
+                              "${t.errorLoadingRanked}: ${snapshot.error}"),
+                        );
+                      }
 
-            final ranked = snapshot.data ?? [];
-            if (ranked.isEmpty) {
-              return const Center(child: Text("No ranking data available."));
-            }
+                      final products = snapshot.data ?? [];
+                      if (products.isEmpty) {
+                        return Center(child: Text(t.noRankingData));
+                      }
 
-            // Fetch full Product models by productId
-            return FutureBuilder<List<Product>>(
-              future: db.getProductsByIds(
-                ranked.map((r) => r['productId'] as String).toList(),
-              ),
-              builder: (context, productSnapshot) {
-                if (productSnapshot.connectionState ==
-                    ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final products = productSnapshot.data ?? [];
-                // Sort by ranking order
-                products.sort((a, b) {
-                  final aScore = ranked
-                      .firstWhere((p) => p['productId'] == a.id)['rankingScore'];
-                  final bScore = ranked
-                      .firstWhere((p) => p['productId'] == b.id)['rankingScore'];
-                  return (bScore as num).compareTo(aScore as num);
-                });
-                final rankingMap = {
-  for (var r in ranked) r['productId'] as String: r['rankingScore'] as num
-};
-return ProductGrid(
-  products: products,
-  rankingScores: rankingMap,
-);
+                      final rankingMap = {
+                        for (var p in products) p.id: p.rankingScore ?? 0
+                      };
 
-              },
-            );
-          },
-        )
-      : StreamBuilder<List<Product>>(
-          stream: db.watchAllProducts(
-            _searchQuery,
-            _selectedCategory == 'All' ? null : _selectedCategory,
+                      return ProductGrid(
+                        products: products,
+                        rankingScores: rankingMap,
+                      );
+                    },
+                  )
+                : StreamBuilder<List<Product>>(
+                    stream: db.watchAllProducts(
+                      _searchQuery,
+                      _selectedCategory == 'All'
+                          ? null
+                          : _selectedCategory,
+                    ),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const Center(
+                            child: CircularProgressIndicator());
+                      }
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Text(
+                              "${t.errorLoadingProducts}: ${snapshot.error}"),
+                        );
+                      }
+                      final products = snapshot.data ?? [];
+                      if (products.isEmpty) {
+                        return Center(child: Text(t.noProductsFound));
+                      }
+                      return ProductGrid(products: products);
+                    },
+                  ),
           ),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              return Center(
-                child: Text("Error loading products: ${snapshot.error}"),
-              );
-            }
-            final products = snapshot.data ?? [];
-            if (products.isEmpty) {
-              return const Center(child: Text("No products found."));
-            }
-            return ProductGrid(products: products);
-          },
-        ),
-),
-
         ],
       ),
 
-      // --- FAB reacts ONLY to CartProvider changes --- //
-  floatingActionButton: Consumer<CartProvider>(
-  builder: (context, cartProvider, _) {
-    if (cartProvider.items.isEmpty) {
-      return const SizedBox.shrink(); // ✅ valid empty widget
-    }
-    return FloatingActionButton.extended(
-      backgroundColor: Colors.blueAccent,
-      onPressed: () => _showCartPanel(context),
-      icon: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          const Icon(Icons.shopping_cart, size: 28),
-          Positioned(
-            right: -4,
-            top: -4,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                cartProvider.totalQuantity.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+      // --- FAB (Cart) --- //
+      floatingActionButton: Consumer<CartProvider>(
+        builder: (context, cartProvider, _) {
+          if (cartProvider.items.isEmpty) {
+            return const SizedBox.shrink();
+          }
+          return FloatingActionButton.extended(
+            backgroundColor: Colors.blueAccent,
+            onPressed: () => _showCartPanel(context),
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.shopping_cart, size: 28),
+                Positioned(
+                  right: -4,
+                  top: -4,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      cartProvider.totalQuantity.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ),
-        ],
+            label: Text(
+              "${t.currencySymbol} ${cartProvider.subtotal.toStringAsFixed(2)}",
+            ),
+          );
+        },
       ),
-      label: Text('DA ${cartProvider.subtotal.toStringAsFixed(2)}'),
     );
-  },
-),
-  );
   }
 
   void _showCartPanel(BuildContext context) {

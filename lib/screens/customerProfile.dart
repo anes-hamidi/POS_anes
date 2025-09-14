@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../data/database.dart';
 import '../services/printer_service.dart';
 import '../widgets/add_edit_customer_dialog.dart';
+import 'package:myapp/l10n/app_localizations.dart';
 
 class CustomerProfileScreen extends StatelessWidget {
   final Customer customer;
@@ -32,7 +33,7 @@ class CustomerProfileScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(child: Text(AppLocalizations.of(context)!.errorgeting(snapshot.error.toString())));
           }
           final sales = snapshot.data ?? [];
 
@@ -61,8 +62,8 @@ class CustomerProfileScreen extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            "Total Invoices",
+                           Text(
+                             AppLocalizations.of(context)!.totalInvoices,
                             style: TextStyle(fontSize: 14, color: Colors.grey),
                           ),
                           Text(
@@ -77,12 +78,12 @@ class CustomerProfileScreen extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          const Text(
-                            "Total Spending",
-                            style: TextStyle(fontSize: 14, color: Colors.grey),
+                          Text(
+                            AppLocalizations.of(context)!.totalSpending,
+                            style: const TextStyle(fontSize: 14, color: Colors.grey),
                           ),
                           Text(
-                            "${totalSpending.toStringAsFixed(2)} DA",
+                            AppLocalizations.of(context)!.currencyFormat(totalSpending),
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -97,19 +98,19 @@ class CustomerProfileScreen extends StatelessWidget {
               ),
 
               const SizedBox(height: 16),
-              Text("Invoices", style: Theme.of(context).textTheme.titleLarge),
+              Text(AppLocalizations.of(context)!.invoices, style: Theme.of(context).textTheme.titleLarge),
               const Divider(),
 
               if (sales.isEmpty)
-                const Center(child: Text("No invoices found for this customer.")),
+                Center(child: Text(AppLocalizations.of(context)!.noInvoicesForCustomer)),
               ...sales.map((saleDetails) {
                 final sale = saleDetails.sale;
                 return Card(
                   child: ListTile(
-                    title: Text("Invoice #${sale.id.substring(0, 8)}"),
+                    title: Text(AppLocalizations.of(context)!.invoiceNumber(sale.id.substring(0, 8))),
                     subtitle: Text(
-                      "Date: ${DateFormat.yMMMd().add_Hm().format(sale.saleDate)}\n"
-                      "Total: ${sale.totalAmount.toStringAsFixed(2)} DA",
+                      "${AppLocalizations.of(context)!.invoiceDate(DateFormat.yMMMd().add_Hm().format(sale.saleDate))}\n"
+                      "${AppLocalizations.of(context)!.invoiceTotal(sale.totalAmount.toStringAsFixed(2))}",
                     ),
                     trailing: IconButton(
                       icon: const Icon(Icons.print, color: Colors.blue),
@@ -118,8 +119,8 @@ class CustomerProfileScreen extends StatelessWidget {
                           await printerService.printInvoice(saleDetails, context);
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Invoice sent to printer."),
+                              SnackBar(
+                                content: Text(AppLocalizations.of(context)!.invoiceSent),
                                 backgroundColor: Colors.green,
                               ),
                             );
@@ -128,7 +129,7 @@ class CustomerProfileScreen extends StatelessWidget {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text("Error printing: $e"),
+                                content: Text(AppLocalizations.of(context)!.errorPrinting(e.toString())),
                                 backgroundColor: Colors.red,
                               ),
                             );
