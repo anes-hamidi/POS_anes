@@ -5,6 +5,7 @@ import 'package:myapp/providers/PrinterProvide.dart';
 import 'package:myapp/providers/settingProvider.dart';
 import 'package:myapp/providers/themeProvider.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'data/database.dart';
 import 'providers/cart_provider.dart';
@@ -17,30 +18,44 @@ import 'services/confirmation_dialog_service.dart';
 import 'services/sale_service.dart';
 import 'providers/locale_provider.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/license_screen.dart';
+import 'services/license_service.dart';
 
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
   final localeProvider = LocaleProvider();
   await localeProvider.loadLocale();
 
   final settingsProvider = SettingsProvider();
   await settingsProvider.loadSettings();
- final themeProvider = ThemeProvider();
+
+  final themeProvider = ThemeProvider();
   await themeProvider.loadTheme();
+
+  final licenseService = LicenseService();
+  final isLicensed = await licenseService.isLicenseValid();
+  final isTrial = await licenseService.isTrialActive();
+
+  String initialRoute = '/license';
+  if (isLicensed || isTrial) {
+    initialRoute = '/dashboard';
+  } else {
+    await licenseService.startTrial();
+    initialRoute = '/dashboard';
+  }
+
   runApp(
     MultiProvider(
       providers: [
-        // add setting provider 
-               Provider<AppDatabase>(create: (_) => AppDatabase()),
-
+        Provider<AppDatabase>(create: (_) => AppDatabase()),
         ChangeNotifierProvider(create: (_) => settingsProvider),
         ChangeNotifierProvider(
           create: (context) => CartProvider(context.read<AppDatabase>()),
         ),
- ChangeNotifierProvider(
-      create: (_) => themeProvider),  
-      
-           Provider(create: (_) => PdfService()),
+        ChangeNotifierProvider(create: (_) => themeProvider),
+        Provider(create: (_) => PdfService()),
         Provider(create: (_) => PrinterService()),
         ChangeNotifierProvider(
           create: (context) =>
@@ -64,27 +79,26 @@ void main() async{
         ),
         ChangeNotifierProvider(create: (_) => localeProvider),
       ],
-      child: const MyApp(),
+      child: MyApp(initialRoute: initialRoute),
     ),
   );
 }
 
-
- 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
- 
+  final String initialRoute;
+  const MyApp({super.key, required this.initialRoute});
+
   @override
   State<MyApp> createState() => _MyAppState();
 }
- 
+
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final localeProvider = Provider.of<LocaleProvider>(context);
     const Color primarySeedColor = Color.fromARGB(255, 12, 181, 147);
- 
+
     final TextTheme appTextTheme = TextTheme(
       displayLarge: const TextStyle(
           fontSize: 57, fontWeight: FontWeight.bold, fontFamily: 'roboto'),
@@ -136,7 +150,6 @@ class _MyAppState extends State<MyApp> {
         titleTextStyle: const TextStyle(
             fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'roboto'),
       ),
-
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           foregroundColor: Colors.white,
@@ -168,7 +181,6 @@ class _MyAppState extends State<MyApp> {
         titleTextStyle: TextStyle(
             fontSize: 24, fontWeight: FontWeight.bold, fontFamily: 'roboto'),
       ),
-  
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           foregroundColor: Colors.white,
@@ -183,7 +195,7 @@ class _MyAppState extends State<MyApp> {
       ),
       inputDecorationTheme: inputDecorationTheme,
     );
- 
+
     return MaterialApp(
       title: 'Inventory & POS Pro',
       theme: lightTheme,
@@ -200,7 +212,11 @@ class _MyAppState extends State<MyApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: const DashboardScreen(),
+      initialRoute: widget.initialRoute,
+      routes: {
+        '/dashboard': (context) => const DashboardScreen(),
+        '/license': (context) => const LicenseScreen(),
+      },
       debugShowCheckedModeBanner: false,
     );
   }

@@ -40,9 +40,7 @@ class ImagePickerField extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(15),
-                child: imageFile != null
-                    ? Image.file(imageFile, fit: BoxFit.cover)
-                    : (initialImageUrl != null && initialImageUrl!.isNotEmpty && !initialImageUrl!.startsWith('/'))
+                child: (initialImageUrl != null && initialImageUrl!.isNotEmpty && !initialImageUrl!.startsWith('/'))
                         ? Image.network(initialImageUrl!, fit: BoxFit.cover, errorBuilder: (c,e,s)=> const Icon(Icons.camera_alt_outlined, size: 50))
                         : const Icon(Icons.camera_alt_outlined, size: 50),
               ),

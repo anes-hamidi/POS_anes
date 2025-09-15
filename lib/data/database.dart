@@ -658,12 +658,12 @@ Future<File> backupDatabaseAsZip(String backupZipPath) async {
             orElse: () => File(''),
           );
 
-          if (csvFile is! File || !(csvFile as File).existsSync()) {
+          if (csvFile is! File || !(csvFile).existsSync()) {
             _logger.warning('No CSV file found for $tableName, skipping.');
             continue;
           }
 
-          final csvString = await (csvFile as File).readAsString();
+          final csvString = await (csvFile).readAsString();
           final parsed = const CsvToListConverter().convert(csvString);
           if (parsed.isEmpty) continue;
 
