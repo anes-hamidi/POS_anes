@@ -1,7 +1,6 @@
 
 import 'package:myapp/data/database.dart';
 
-import 'package:myapp/data/database.dart';
 
 class SaleWithPayments extends SaleWithItemsAndCustomer {
   final List<Payment> payments;

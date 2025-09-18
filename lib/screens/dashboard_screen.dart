@@ -1,11 +1,16 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:drift/drift.dart' hide Column;
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:myapp/l10n/app_localizations.dart';
 import 'package:myapp/providers/themeProvider.dart';
+import 'package:myapp/screens/license_screen.dart';
 import 'package:myapp/screens/payment_screen.dart';
 import 'package:myapp/screens/settings.dart';
+import 'package:myapp/screens/subscription_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:myapp/providers/license_provider.dart';
 import './pos_screen.dart';
 import './product_screen.dart';
 import './customer_screen.dart';
@@ -94,6 +99,15 @@ class _DashboardScreenState extends State<DashboardScreen>
       debugPrint("Error loading dashboard data: $e\n$stack");
     }
   }
+   getUserName(userId) async {
+    final userName = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get()
+          .then((doc) => doc['name'] as String? ?? 'User');
+          return userName.toString();
+
+  }
 
   @override
   void dispose() {
@@ -101,10 +115,11 @@ class _DashboardScreenState extends State<DashboardScreen>
     _timer.cancel();
     super.dispose();
   }
-
+   
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final licenseProvider = Provider.of<LicenseProvider>(context);
     final t = AppLocalizations.of(context)!;
 
     final List<Map<String, dynamic>> dashboardItems = [
@@ -153,7 +168,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
     return ThemedScaffold(
       appBar: AppBar(
-        title: Text(t.dashboardTitle),
+        title: Text(t.dashboard),
         actions: [
           IconButton(
             icon: Icon(
@@ -164,6 +179,27 @@ class _DashboardScreenState extends State<DashboardScreen>
             onPressed: () => themeProvider.toggleTheme(),
             tooltip: t.toggleTheme,
           ),
+          IconButton(
+            icon: const Icon(Icons.vpn_key),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => LicenseScreen(),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.subscriptions),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => SubscriptionScreenA(),
+                ),
+              );
+            },
+          ),
+          
         ],
       ),
       body: RefreshIndicator(

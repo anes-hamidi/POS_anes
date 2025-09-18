@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:myapp/l10n/app_localizations.dart';
@@ -6,6 +7,9 @@ import 'package:myapp/providers/settingProvider.dart';
 import 'package:myapp/providers/themeProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+// Import Firebase Firestore
+import 'package:myapp/providers/license_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'data/database.dart';
 import 'providers/cart_provider.dart';
@@ -18,9 +22,8 @@ import 'services/confirmation_dialog_service.dart';
 import 'services/sale_service.dart';
 import 'providers/locale_provider.dart';
 import 'screens/dashboard_screen.dart';
-import 'screens/license_screen.dart';
 import 'services/license_service.dart';
-
+import 'screens/subscription_stepper.dart'; // Import the Stepper widget
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
@@ -33,17 +36,21 @@ void main() async {
 
   final themeProvider = ThemeProvider();
   await themeProvider.loadTheme();
+  // get the current user id
+  final String? userId = FirebaseAuth.instance.currentUser?.uid;
+  // TODO: Replace with real authenticated userId
+  const String defaultUserId = 'testUserId';
+  final prefs = await SharedPreferences.getInstance();
+  final sharedPrefUserId = prefs.getString('userId') ?? defaultUserId;
 
-  final licenseService = LicenseService();
-  final isLicensed = await licenseService.isLicenseValid();
-  final isTrial = await licenseService.isTrialActive();
+  final licenseProvider = LicenseProvider();
+  await licenseProvider.initialize(sharedPrefUserId!);
 
-  String initialRoute = '/license';
-  if (isLicensed || isTrial) {
+  String initialRoute = '/subscription';
+  if (FirebaseAuth.instance.currentUser != null) {
     initialRoute = '/dashboard';
   } else {
-    await licenseService.startTrial();
-    initialRoute = '/dashboard';
+    initialRoute = '/subscription';
   }
 
   runApp(
@@ -51,6 +58,7 @@ void main() async {
       providers: [
         Provider<AppDatabase>(create: (_) => AppDatabase()),
         ChangeNotifierProvider(create: (_) => settingsProvider),
+        ChangeNotifierProvider(create: (_) => licenseProvider),
         ChangeNotifierProvider(
           create: (context) => CartProvider(context.read<AppDatabase>()),
         ),
@@ -129,11 +137,10 @@ class _MyAppState extends State<MyApp> {
         borderSide: const BorderSide(width: 0, style: BorderStyle.none),
       ),
       filled: true,
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     );
 
-    // --- Light Theme --- //
+    // Light Theme
     final ThemeData lightTheme = ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
@@ -154,10 +161,8 @@ class _MyAppState extends State<MyApp> {
         style: ElevatedButton.styleFrom(
           foregroundColor: Colors.white,
           backgroundColor: primarySeedColor,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          padding:
-              const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           textStyle: const TextStyle(
               fontSize: 16, fontWeight: FontWeight.w500, fontFamily: 'roboto'),
         ),
@@ -165,7 +170,7 @@ class _MyAppState extends State<MyApp> {
       inputDecorationTheme: inputDecorationTheme,
     );
 
-    // --- Dark Theme --- //
+    // Dark Theme
     final ThemeData darkTheme = ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
@@ -185,10 +190,8 @@ class _MyAppState extends State<MyApp> {
         style: ElevatedButton.styleFrom(
           foregroundColor: Colors.white,
           backgroundColor: primarySeedColor,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          padding:
-              const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           textStyle: const TextStyle(
               fontSize: 16, fontWeight: FontWeight.w500, fontFamily: 'roboto'),
         ),
@@ -215,9 +218,24 @@ class _MyAppState extends State<MyApp> {
       initialRoute: widget.initialRoute,
       routes: {
         '/dashboard': (context) => const DashboardScreen(),
-        '/license': (context) => const LicenseScreen(),
+        '/subscription': (context) => const SubscriptionScreen(),
       },
       debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class SubscriptionScreen extends StatelessWidget {
+  const SubscriptionScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Free Trial Subscription')),
+      body: const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: SubscriptionStepper(),
+      ),
     );
   }
 }

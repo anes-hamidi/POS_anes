@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import '../data/database.dart';
 
 class PaymentsScreen extends StatefulWidget {
-  const PaymentsScreen({Key? key}) : super(key: key);
+  const PaymentsScreen({super.key});
 
   @override
   State<PaymentsScreen> createState() => _PaymentsScreenState();

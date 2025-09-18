@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart' hide Column;
 import 'package:myapp/l10n/app_localizations.dart';
 // product_list.dart
 import 'dart:io';
